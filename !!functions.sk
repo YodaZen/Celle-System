@@ -1,0 +1,236 @@
+import:
+    java.util.UUID
+    org.bukkit.Bukkit
+    com.sk89q.worldedit.Vector
+    com.sk89q.worldedit.BlockVector
+    com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion
+    com.sk89q.worldguard.protection.managers.RemovalStrategy
+    com.sk89q.worldguard.protection.flags.DefaultFlag as Flag
+    com.sk89q.worldguard.protection.flags.RegionGroup as Group
+    com.sk89q.worldguard.protection.flags.StateFlag$State
+    com.sk89q.worldguard.domains.DefaultDomain
+    com.sk89q.worldedit.LocalSession
+    com.sk89q.worldedit.bukkit.BukkitAdapter
+
+
+options:
+    p: &8&l[&b&lCELLE&f&lSYSTEM&8&l] &7>>&f
+
+function yml_replace(type: string,celle: string) :: strings:
+    if {_type} = "Type.Unrented":
+        set {_lines::*} to yml list "Signs.Unrented" from "Config"
+    else:
+        set {_lines::*} to yml list "Signs.Rented" from "Config"
+    replace all "{ID}" with "%{_celle}%" in {_lines::*}
+    replace all "{PRICE}" with "%{Celle::%{_celle}%::Price}%" in {_lines::*}
+    replace all "{RENTER}" and "{RENT}" with "%{Celle::%{_celle}%::Owner} parsed as offlineplayer%" in {_lines::*}
+    set {_time} to difference between {Celle::%{_celle}%::ExpirationDate} and now
+    replace all "{DURATION}" and "{DURA}" with (time({_time},true) ? "0 sekunder") in {_lines::*}
+    return {_lines::*}
+
+function celle_rentsign(type: string,loc: location,celle: string):
+    if {_type} = "Type.Unrented":
+        set {_lines::*} to yml_replace("Type.Unrented",{_celle})
+    else:
+        set {_lines::*} to yml_replace("Type.Rented",{_celle})
+    wait 1 tick
+    loop 4 times:
+        set line loop-number of block at {_loc} to colored {_lines::%loop-number%}
+
+function celle_info(celle: string, player: player):
+    if {CelleRented::%{_celle}%} is set:
+        set {_region} to getRegion({_celle},getWGInstance("%world of {Celle::%{_celle}%::Location}%"))
+        set {_members::*} to getMembers({_region})
+        set {_time} to difference between {Celle::%{_celle}%::ExpirationDate} and now
+        message "%nl%&8&m|             &8&l[  &b&lCELLE&f&lSYSTEM  &8&l]&8&m             |%nl%" to {_player}
+        message "&8&m [&f   Celle ID: %{_celle} in uppercase%" to {_player}
+        message "&8&m [&f   Celle Ejer: %{Celle::%{_celle}%::Owner} parsed as offlineplayer%" to {_player}
+        message formatted "&8&m [&f   Celle Lejeperiode: <tooltip:&8[&b&l!&8] &f%time({_time})%>%time({_time},true)% &8[&b&l!&8]<reset>" to {_player}
+        if size of {_members::*} > 2:
+            message "&8&m [&f   Celle Medlemmer:" to {_player}
+        else if size of {_members::*} = 2:
+            message "&8&m [&f   Celle Medlem:" to {_player}
+        else:
+            message "&8&m [&f   Celle Medlemmer: &c(Ingen)" to {_player}
+        loop {_members::*}:
+            if loop-value != {Celle::%{_celle}%::Owner}:
+                message "&8&m [&f      - %loop-value parsed as offlineplayer%" to {_player}
+        message formatted "<tooltip:&8&l[&6&l!&8&l]&fInformation:%nl%&fDiscord: YodaZen##5844%nl%&fKøbt fra McSetups: www.mcsetups.dk>%nl%&8&m|     [&f Cellesystem lavet af: YodaZen &8&m]      |%nl%" to {_player}
+    else if {Celle::%{_celle}%} is set:
+        message "%nl%&8&m|             &8&l[  &b&lCELLE&f&lSYSTEM  &8&l]&8&m             |%nl%" to {_player}
+        message "&8&m [&f   Celle Info: Denne celle er ledig!" to {_player}
+        message "&8&m [&f   Celle Pris: %{Celle::%{_celle}%::Price}%" to {_player}
+        message "&8&m [&f   Celle Permission: %{Celle::%{_celle}%::Permission} ? "&c(Ingen)"%" to {_player}
+        set {_locs::*} to split "%{Celle::%{_celle}%::Location}%" at ", "
+        message "&8&m [&f   Celle Lokation: %{_locs::1}%, %{_locs::2}%, %{_locs::3}%" to {_player}
+        message formatted "<tooltip:&8&l[&6&l!&8&l]&fInformation:%nl%&fDiscord: YodaZen##5844%nl%&fKøbt fra McSetups: www.mcsetups.dk>%nl%&8&m|     [&f Cellesystem lavet af: YodaZen &8&m]      |%nl%" to {_player}
+    else:
+        message "{@p} &fCellen &b%{_celle}%&f findes ikke! &8[&c✘&8]" to {_player}
+
+function celle_opret(celle: string, price: number, permission: string, player: player):
+    set {_loc} to location at {_player}'s targeted block
+    set {Celle::%{_celle}%} to {_celle}
+    set {Celle::%{_celle}%::Location} to {_loc}
+    set {Celle::Locations::%location of {_player}'s targeted block%} to {_celle}
+    set {Celle::%{_celle}%::Price} to {_price}
+    set {Celle::%{_celle}%::Permission} to {_permission}
+    celle_rentsign("Type.Unrented",{_loc},{_celle})
+# Opret Region
+    set {_instance} to getWGInstance("%{_player}'s world%")
+    set {_locs::*} to getWorldEditSelections({_player})
+    set {_region} to createCuboidRegion({_locs::1}, {_locs::2}, {_celle}, {_instance})
+# Sæt flags og priority
+    loop (yml list "Celle.MemberGroups" from "Config"):
+        console command "/rg addmember -w ""%{_player}'s world%"" %{_celle}%  g:%loop-value%"
+        # addGroup({_region}, loop-value)
+    setPriority({_region},10)
+    set {_type} to yml value "Celle.FlagGroup" from "Config"
+    loop yml list "Celle.Flags" from "Config":
+        console command "/rg flag %{_celle}% -w ""%{_player}'s world%"" -g %{_type}% %loop-value%"
+    message "{@p} Du har oprettet cellen ved navn &b%{_celle}%!" to {_player}
+
+function celle_fjern(celle: string,player: player):
+    if {Celle::%{_celle}%} is set:
+        removeRegion({_celle},(getWGInstance("%world of {Celle::%{_celle}%::Location}%")))
+        set block at {Celle::%{_celle}%::Location} to air
+        wait 1 tick
+        delete {Celle::%{Celle::%{_celle}%::Owner}%::Owning::%{_celle}%}
+        delete {Celle::Locations::%{Celle::%{_celle}%::Location}%}
+        delete {Celle::%{_celle}%}
+        delete {Celle::%{_celle}%::*}
+        delete {CelleRented::%{_celle}%}
+        message "{@p} &fDu har fjernet cellen ved navn &b%{_celle}%!" to {_player}
+    else:
+        message "{@p} &fEn celle med dette navn findes ikke! &8[&c✘&8]" to {_player}
+
+function celle_unrent(celle: string, player: player):
+    set {_region} to getRegion({_celle},getWGInstance("%world of {Celle::%{_celle}%::Location}%"))
+    delete {CelleRented::%{_celle}%}
+    delete {Celle::%{_celle}%::ExpirationDate}
+    delete {Celle::%{Celle::%{_celle}%::Owner}%::Owning::%{_celle}%}
+    delete {Celle::%{_celle}%::Owner}
+    loop getMembers({_region}):
+        removeMember({_region},loop-value)
+    celle_rentsign("Type.Unrented",{Celle::%{_celle}%::Location},{_celle})
+
+function celle_find(player: player, page: integer):
+    set {_idles::*} to {Celle::*}
+    remove {CelleRented::*} from {_idles::*}
+    message "&8&m [&f   &lFinder&f   &8&m] %nl%" to {_player}
+    loop 10 times:
+        set {_value} to {_idles::%(({_page}*10)-loop-number)+1%}
+        if {_value} is set:
+            set {_locs::*} to split "%{Celle::%{_value}%::Location}%" at ", "
+            add "      %{_value}% <tooltip: &fCelle Lokation: &b%{_locs::1}%, %{_locs::2}%, %{_locs::3}%>&8&l[&b&l!&8&l]" to {_list::*}
+    if size of {_list::*} > 0:
+        message formatted {_list::*} to {_player}
+    else:
+        message "     &f&c(Ingen)" to {_player}
+    message " " to {_player}
+    set {_size} to size of {_idles::*}
+    if ({_size}-({_page}*10)) < -9:
+        set {_left} to "&6<cmd:/ce find %{_page}-1%><<<reset>&f"
+    if ({_size}-({_page}*10)) > 0:
+        set {_right} to "&6<cmd:/ce find %{_page}+1%>>><reset>&f"
+    broadcast formatted "    %{_left} ? "&8<<"%   &f|   %{_right} ? "&8>>"%%nl%"
+
+function time(t: timespan,boolean: boolean = false) :: string:
+    set {_seconds} to ({_t}.getTicks()/20)
+    set {_time::1} to (floor({_seconds}/86400))
+    set {_return::1} to "%{_time::1}% dage" if {_time::1} > 1 else "%{_time::1}% dag"
+    set {_time::2} to (floor({_seconds}/3600) - {_time::1}*24)
+    set {_return::2} to "%{_time::2}% timer" if {_time::2} > 1 else "%{_time::2}% time"
+    set {_time::3} to (floor({_seconds}/60) - ({_time::2}*60) - ({_time::1}*1440))
+    set {_return::3} to "%{_time::3}% minutter" if {_time::3} > 1 else "%{_time::3}% minut"
+    set {_time::4} to (floor({_seconds}) - ({_time::3}*60) - ({_time::2}*3600) - ({_time::1}*86400))
+    set {_return::4} to "%{_time::4}% sekunder" if {_time::4} > 1 else "%{_time::4}% sekund"
+    loop (size of {_time::*}) times:
+        if 1st element of split {_return::%loop-number%} at " " parsed as number <= 0:
+            delete {_return::%loop-number%}
+    if {_boolean} = true:
+        return 1st element of {_return::*}
+    else:
+        set {_return} to "%{_return::*}%"
+        replace all " and " with " og " in {_return}
+        return {_return}
+
+function celle_Update():
+    create section and store it in {_section}:
+        loop {CelleRented::*}:
+            if time since {Celle::%loop-value%::ExpirationDate} is set:
+                celle_unrent(loop-value,({Celle::%loop-value%::Owner} parsed as offlineplayer))
+            else:
+                celle_rentsign("Type.Rented",{Celle::%loop-value%::Location},loop-value)
+    run section {_section} async and wait
+    message "[CelleSystem] Cellerne blev opdateret og gemt!" to console
+
+# WorldEdit/WorldGuardAPI
+
+function createCuboidRegion(loc1: location, loc2: location, name: string, worldguardInstance: object) :: object:
+
+    set {_v1} to new Vector((x-loc of {_loc1}), (y-loc of {_loc1}), (z-loc of {_loc1})).toBlockVector()
+    set {_v2} to new Vector((x-loc of {_loc2}), (y-loc of {_loc2}), (z-loc of {_loc2})).toBlockVector()
+
+    set {_region} to new ProtectedCuboidRegion({_name}, {_v1}, {_v2})
+    {_worldguardInstance}.addRegion({_region})
+
+    return {_worldguardInstance}.getRegion({_name})
+
+function removeRegion(name: string, worldguardInstance: object, removeChildren: boolean = false):
+    if {_boolean} = true:
+        {_worldguardInstance}.removeRegion({_name}, RemovalStrategy.UNSET_PARENT_IN_CHILDREN)
+    else:
+        {_worldguardInstance}.removeRegion({_name})
+
+function getRegionName(region: object) :: string:
+    return {_region}.getId()
+
+function getRegion(name: string, worldguardInstance: object) :: object:
+    return {_worldguardInstance}.getRegion({_name})
+
+function regionExists(name: string, worldguardInstance: object) :: boolean:
+    return {_worldguardInstance}.hasRegion({_name})
+
+function setFlag(region: object, flag: object, state: object):
+    {_region}.setFlag({_flag}, {_state})
+
+function getFlag(region: object, flag: object) :: object:
+    return {_region}.getFlag({_flag})
+
+function getFlags(region: object) :: object:
+    return {_region}.getFlags()
+
+function setPriority(region: object, Priority: integer = 10):
+    {_region}.setPriority({_Priority})
+
+function addMember(region: object, p: player):
+    set {_uuid} to uuid of {_p}
+    {_region}.getMembers().addPlayer(UUID.fromString("%{_uuid}%"))
+
+function addGroup(region: object, group: string):
+    {_region}.getMembers().addGroup({_group})
+
+function removeMember(region: object, uuid: string):
+    {_region}.getMembers().removePlayer(UUID.fromString("%{_uuid}%"))
+
+function getMembers(region: object) :: strings:
+    loop ...{_region}.getMembers().getUniqueIds():
+        add "%loop-value%" to {_members::*}
+    return {_members::*}
+
+function getWGInstance(world: string = "world") :: object:
+    return Bukkit.getPluginManager().getPlugin("worldguard").getRegionContainer().get(world({_world}))
+
+function getWorldEditSelections(player: player) :: locations:
+    set {_worldEdit} to Bukkit.getServer().getPluginManager().getPlugin("WorldEdit")
+    set {_session} to {_worldEdit}.getSession({_player})
+    set {_selection} to {_session}.getSelection(BukkitAdapter.adapt({_player}.getWorld()))
+    if {_selection} is set:
+        set {_min} to {_selection}.getMinimumPoint()
+        set {_max} to {_selection}.getMaximumPoint()
+        set {_world} to {_selection}.getWorld()
+        set {_Loc::1} to location({_min}.getX(), {_min}.getY(), {_min}.getZ(), {_world})
+        set {_Loc::2} to location({_max}.getX(), {_max}.getY(), {_max}.getZ(), {_world})
+    else:
+        message "{@p} Du mangler at markere cellen! [&c✘&f]" to {_player}
+    return {_Loc::*}

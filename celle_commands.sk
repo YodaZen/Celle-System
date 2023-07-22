@@ -1,0 +1,114 @@
+options:
+    p: &8&l[&b&lCELLE&f&lSYSTEM&8&l] &7>>&f
+
+command /celle [<string = "hjælp">] [<string>] [<string>] [<string>]:
+    aliases: ce
+    permission: CelleSystem.Command
+    permission message: {@p} Du har ikke adgang til denne kommando!
+    trigger:
+        if arg-1 = "hjælp" or "help":
+            if arg-2 isn't set:
+                message "%nl%&8&m|             &8&l[  &b&lCELLE&f&lSYSTEM  &8&l]&8&m             |%nl%" to player
+                message "&8&m [&f   <tooltip:&8&l[&a&l!&8&l]&f Tryk for auto kommando.><suggest command:/celle help>/celle help<reset>%nl%&8      - &7Viser denne besked!" to player
+                message "&8&m [&f   <tooltip:&8&l[&a&l!&8&l]&f Tryk for auto kommando.><suggest command:/celle find >/celle find<reset>%nl%&8      - &7Giver mulighed for at finde ledige celler!" to player
+                message "&8&m [&f   <tooltip:&8&l[&a&l!&8&l]&f Tryk for auto kommando.><suggest command:/celle info >/celle info <celle-ID><reset>%nl%&8      - &7Giver information om din eller en andens celle!" to player
+                message "&8&m [&f   <tooltip:&8&l[&a&l!&8&l]&f Tryk for auto kommando.><suggest command:/celle add >/celle add <spiller> [<celle-ID>]<reset>%nl%&8      - &7Giver mulighed for at tilføje spillere til din celle!" to player
+                message "&8&m [&f   <tooltip:&8&l[&a&l!&8&l]&f Tryk for auto kommando.><suggest command:/celle remove >/celle remove <spiller> [<celle-ID>]<reset>%nl%&8      - &7Giver mulighed for at fjerne spillere fra din celle!" to player
+                message formatted "<tooltip:&8&l[&6&l!&8&l]&fInformation:%nl%&fDiscord: YodaZen##5844%nl%&fKøbt fra McSetups: www.mcsetups.dk>%nl%&8&m|     [&f Cellesystem lavet af: YodaZen &8&m]      |%nl%" to player
+        if arg-1 = "info" or "information":
+            if arg-2 is set:
+                celle_info(arg-2,player)
+            else:
+                message "{@p} &fForkert kommando: /ce info <celle-ID> &8[&c✘&8]" to player
+        if arg-1 = "add" or "tilføj":
+            set {_player} to arg-2 parsed as offlineplayer
+            if {_player} is not set:
+                message "{@p} &fForkert kommando: /ce add <spiller> [<celle-ID>] &8[&c✘&8]" to player
+            else if {_player} has played before:
+                set {_celle} to (1st element of {Celle::%player's uuid%::Owning::*} ? arg-3)
+                if size of {Celle::%player's uuid%::Owning::*} > 1:
+                    message "{@p} &fDu ejer flere celler! Vælg hvilken du vil tilføje spilleren til! &8[&c✘&8]" to player
+                    message "{@p} &f/celle tilføj <spiller> <celle-ID>!" to player
+                else:
+                    if {_celle} is set:
+                        if {_player} = player:
+                            message "{@p} &fDu kan ikke tilføje dig selv til cellen! &8[&c✘&8]" to player
+                            stop
+                        set {_region} to getRegion({_celle},getWGInstance("%world of {Celle::%{_celle}%::Location}%"))
+                        addMember({_region},{_player})
+                        message "{@p} &fDu har tilføjet &b%{_player}%&f til cellen &b%{_celle}%&f!" to player
+                        message "{@p} &fDu er blevet tilføjet til cellen &b%{_celle}%&f!" to {_player}
+                    else:
+                        message "{@p} &fDu ejer ikke en celle! &8[&c✘&8]" to player
+            else:
+                message "{@p} &fDenne spiller findes ikke i vores database! &8[&c✘&8]" to player
+        if arg-1 = "remove" or "fjern":
+            set {_player} to arg-2 parsed as offlineplayer
+            if {_player} is not set:
+                message "{@p} &fForkert kommando: /ce remove <spiller> [<celle-ID>] &8[&c✘&8]" to player
+            else if {_player} has played before:
+                set {_celle} to (1st element of {Celle::%player's uuid%::Owning::*} ? arg-3)
+                if size of {Celle::%player's uuid%::Owning::*} > 1:
+                    message "{@p} &fDu ejer flere celler! Vælg hvilken du vil fjerne spilleren fra! &8[&c✘&8]" to player
+                    message "{@p} &f/celle tilføj <spiller> <celle-ID>!" to player
+                else:
+                    if {_celle} is set:
+                        if {_player} = player:
+                            message "{@p} &fDu kan ikke fjerne dig selv fra cellen! &8[&c✘&8]" to player
+                            stop
+                        set {_region} to getRegion({_celle},getWGInstance("%world of {Celle::%{_celle}%::Location}%"))
+                        removeMember({_region},({_player}'s uuid))
+                        message "{@p} &fDu har fjernet &b%{_player}%&f fra cellen &b%{_celle}%&f!" to player
+                        message "{@p} &fDu er blevet fjernet fra cellen &b%{_celle}%&f!" to {_player}
+                    else:
+                        message "{@p} &fDu ejer ikke en celle! &8[&c✘&8]" to player
+            else:
+                message "{@p} &fDenne spiller findes ikke i vores database! &8[&c✘&8]" to player
+        if arg-1 = "find":
+            set {_page} to arg-2 parsed as integer
+            celle_find(player,({_page} ? 1))
+
+
+command /celleadmin [<string = "info">] [<string>] [<string>] [<string>]:
+    aliases: cea, ceadmin
+    permission: CelleSystem.AdminCommand
+    trigger:
+        if arg-1 = "info":
+            if arg-2 isn't set:
+                message "%nl%&8&m|             &8&l[  &b&lCELLE&f&lSYSTEM  &8&l]&8&m             |%nl%&8                      {&cADMIN&8}%nl%" to player
+                message "&8&m [&f   <tooltip:&8&l[&a&l!&8&l]&f Tryk for auto kommando.><suggest command:/celleadmin delete >/celleadmin create <celle-ID> <pris> [<permission>]<reset>%nl%&8      - &7Opretter en celle!" to player
+                message "&8&m [&f   <tooltip:&8&l[&a&l!&8&l]&f Tryk for auto kommando.><suggest command:/celleadmin delete >/celleadmin delete <celle-ID><reset>%nl%&8      - &7Sletter en celle!" to player
+                message "&8&m [&f   <tooltip:&8&l[&a&l!&8&l]&f Tryk for auto kommando.><suggest command:/celleadmin unrent >/celleadmin unrent <celle-ID><reset>%nl%&8      - &7Opsiger lejen for en celle!" to player
+                message "&8&m [&f   <tooltip:&8&l[&a&l!&8&l]&f Tryk for auto kommando.><suggest command:/celleadmin reload >/celleadmin reload<reset>%nl%&8      - &7Opdatere konfigurationsfilen!" to player
+                message formatted "<tooltip:&8&l[&6&l!&8&l]&fInformation:%nl%&fDiscord: YodaZen##5844%nl%&fKøbt fra McSetups: www.mcsetups.dk>%nl%&8&m|     [&f Cellesystem lavet af: YodaZen &8&m]      |%nl%" to player
+        else if arg-1 = "opret" or "create":
+            if {Celle::%arg-2%} isn't set:
+                set {_price} to arg-3 parsed as number
+                if {_price} is set:
+                    if player's targeted block != sign:
+                        message "{@p} &fDu skal kigge på et skilt! &8[&c✘&8]" to player
+                    else:
+                        if getWorldEditSelections(player) is set:
+                            celle_opret(arg-2,{_price},arg-4,player)
+            else:
+                message "{@p} &fCellen &b%arg-2%&f findes ikke! &8[&c✘&8]" to player
+        else if arg-1 = "slet", "fjern" or "remove" or "delete":
+            celle_fjern(arg-2,player)
+        else if arg-1 = "unrent" or "opsig":
+            if arg-2 is set:
+                if {CelleRented::%arg-2%} is set:
+                    set {_player} to ({Celle::%arg-2%::Owner} parsed as offlineplayer)
+                    celle_unrent(arg-2,{_player})
+                    message "{@p} &fDu har opsagt cellen ved navn &b%arg-2%!" to player
+                    message "{@p} &fDin celle ved navn &b%arg-2%&f er blevet opsagt!" to {_player}
+                else:
+                    if {Celle::%arg-2%} is set:
+                        message "{@p} &fDenne celle er allerede opsagt! &8[&c✘&8]" to player
+                    else:
+                        message "{@p} &fDenne celle findes ikke! &8[&c✘&8]" to player
+            else:
+                message "{@p} &fForkert kommando: /cea unrent <celle-ID> &8[&c✘&8]" to player
+        else if arg-1 = "reload":
+            if arg-2 is not set:
+                load_YML()
+                message "{@p} &fKonfigurationen er blevet opdateret!" to player

@@ -1,0 +1,24 @@
+on load:
+    load_YML()
+
+
+
+function load_YML():
+    load yml "plugins/Skript/YAML/CelleSystem/Config.yml" as "Config"
+    if yml value "Celle.Settings.UnrentBySneaking" from "Config" is not set:
+        set yml value "Celle.Settings.UnrentBySneaking" from "Config" to true
+    if yml value "Celle.Priority" from "Config" is not set:
+        set yml value "Celle.Priority" from "Config" to 10
+    if yml value "Celle.Rentable" from "Config" is not set:
+        set yml value "Celle.Rentable" from "Config" to "10 days"
+    if yml list "Celle.MemberGroups" from "Config" is not set:
+        set yml list "Celle.MemberGroups" from "Config" to "Vagt", "Officer" and "Direktør"
+    if yml value "Celle.Flags" from "Config" is not set:
+        set yml value "Celle.FlagGroup" from "Config" to "NONMEMBERS"
+        set yml list "Celle.Flags" from "Config" to "PASSTHROUGH DENY", "INTERACT DENY", "USE DENY", "CHEST-ACCESS DENY" and "PASSTHROUGH DENY"
+    if yml value "Signs" from "Config" is not set:
+        set yml list "Signs.Unrented" from "Config" to "&8[&2&lTil Salg&8]", "&a{ID}", "&a${PRICE}", "&a1 dag"
+        set yml list "Signs.Rented" from "Config" to "&8[&c&lLejet&8]", "&c{ID}", "&c{RENTER}", "&c{DURATION}"
+        set {_comments::*} to "Mulige Placeholders:", "{ID} : Navnet på Cellen (f.eks. C1)", "{PRICE} : Prisen på Cellen (f.eks. 300)", "{RENTER} eller {RENT} : Navnet på ejeren af Cellen (f.eks. YodaZen)" and "{DURATION} eller {DURA} : Lejeperioden (f.eks. 3 dage)"
+        set comments of node "Signs" from "Config" to {_comments::*}
+    save yml "Config"
