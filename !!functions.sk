@@ -98,6 +98,26 @@ function celle_unrent(celle: string, player: player):
         removeMember({_region},loop-value)
     celle_rentsign("Type.Unrented",{Celle::%{_celle}%::Location},{_celle})
 
+function time(t: timespan,boolean: boolean = false) :: string:
+    set {_seconds} to ({_t}.getTicks()/20)
+    set {_time::1} to (floor({_seconds}/86400))
+    set {_return::1} to "%{_time::1}% dage" if {_time::1} > 1 else "%{_time::1}% dag"
+    set {_time::2} to (floor({_seconds}/3600) - {_time::1}*24)
+    set {_return::2} to "%{_time::2}% timer" if {_time::2} > 1 else "%{_time::2}% time"
+    set {_time::3} to (floor({_seconds}/60) - ({_time::2}*60) - ({_time::1}*1440))
+    set {_return::3} to "%{_time::3}% minutter" if {_time::3} > 1 else "%{_time::3}% minut"
+    set {_time::4} to (floor({_seconds}) - ({_time::3}*60) - ({_time::2}*3600) - ({_time::1}*86400))
+    set {_return::4} to "%{_time::4}% sekunder" if {_time::4} > 1 else "%{_time::4}% sekund"
+    loop (size of {_time::*}) times:
+        if 1st element of split {_return::%loop-number%} at " " parsed as number <= 0:
+            delete {_return::%loop-number%}
+    if {_boolean} = true:
+        return 1st element of {_return::*}
+    else:
+        set {_return} to "%{_return::*}%"
+        replace all " and " with " og " in {_return}
+        return {_return}
+
 function celle_Update():
     create section and store it in {_section}:
         loop {Celle::*}:
