@@ -10,11 +10,10 @@ command /celle [<string = "hjælp">] [<string>] [<string>] [<string>]:
             if arg-2 isn't set:
                 message "%nl%&8&m|             &8&l[  &b&lCELLE&f&lSYSTEM  &8&l]&8&m             |%nl%" to player
                 message "&8&m [&f   <tooltip:&8&l[&a&l!&8&l]&f Tryk for auto kommando.><suggest command:/celle help>/celle help<reset>%nl%&8      - &7Viser denne besked!" to player
-                message "&8&m [&f   <tooltip:&8&l[&a&l!&8&l]&f Tryk for auto kommando.><suggest command:/celle find >/celle find<reset>%nl%&8      - &7Giver mulighed for at finde ledige celler!" to player
                 message "&8&m [&f   <tooltip:&8&l[&a&l!&8&l]&f Tryk for auto kommando.><suggest command:/celle info >/celle info <celle-ID><reset>%nl%&8      - &7Giver information om din eller en andens celle!" to player
                 message "&8&m [&f   <tooltip:&8&l[&a&l!&8&l]&f Tryk for auto kommando.><suggest command:/celle add >/celle add <spiller> [<celle-ID>]<reset>%nl%&8      - &7Giver mulighed for at tilføje spillere til din celle!" to player
                 message "&8&m [&f   <tooltip:&8&l[&a&l!&8&l]&f Tryk for auto kommando.><suggest command:/celle remove >/celle remove <spiller> [<celle-ID>]<reset>%nl%&8      - &7Giver mulighed for at fjerne spillere fra din celle!" to player
-                message formatted "<tooltip:&8&l[&6&l!&8&l]&fInformation:%nl%&fDiscord: YodaZen##5844%nl%&fKøbt fra McSetups: www.mcsetups.dk>%nl%&8&m|     [&f Cellesystem lavet af: YodaZen &8&m]      |%nl%" to player
+                message formatted "<tooltip:&8&l[&6&l!&8&l]&fInformation:%nl%&fDiscord: YodaZen##5844%nl%&fGithub: https://github.com/YodaZen/Celle-System>%nl%&8&m|     [&f Cellesystem lavet af: YodaZen &8&m]      |%nl%" to player
         if arg-1 = "info" or "information":
             if arg-2 is set:
                 celle_info(arg-2,player)
@@ -34,7 +33,7 @@ command /celle [<string = "hjælp">] [<string>] [<string>] [<string>]:
                         if {_player} = player:
                             message "{@p} &fDu kan ikke tilføje dig selv til cellen! &8[&c✘&8]" to player
                             stop
-                        set {_region} to getRegion({_celle},getWGInstance("%world of {Celle::%{_celle}%::Location}%"))
+                        set {_region} to celle_getRegion({_celle},getWGInstance("%world of {Celle::%{_celle}%::Location}%"))
                         addMember({_region},{_player})
                         message "{@p} &fDu har tilføjet &b%{_player}%&f til cellen &b%{_celle}%&f!" to player
                         message "{@p} &fDu er blevet tilføjet til cellen &b%{_celle}%&f!" to {_player}
@@ -56,7 +55,7 @@ command /celle [<string = "hjælp">] [<string>] [<string>] [<string>]:
                         if {_player} = player:
                             message "{@p} &fDu kan ikke fjerne dig selv fra cellen! &8[&c✘&8]" to player
                             stop
-                        set {_region} to getRegion({_celle},getWGInstance("%world of {Celle::%{_celle}%::Location}%"))
+                        set {_region} to celle_getRegion({_celle},getWGInstance("%world of {Celle::%{_celle}%::Location}%"))
                         removeMember({_region},({_player}'s uuid))
                         message "{@p} &fDu har fjernet &b%{_player}%&f fra cellen &b%{_celle}%&f!" to player
                         message "{@p} &fDu er blevet fjernet fra cellen &b%{_celle}%&f!" to {_player}
@@ -64,9 +63,6 @@ command /celle [<string = "hjælp">] [<string>] [<string>] [<string>]:
                         message "{@p} &fDu ejer ikke en celle! &8[&c✘&8]" to player
             else:
                 message "{@p} &fDenne spiller findes ikke i vores database! &8[&c✘&8]" to player
-        if arg-1 = "find":
-            set {_page} to arg-2 parsed as integer
-            celle_find(player,({_page} ? 1))
 
 
 command /celleadmin [<string = "info">] [<string>] [<string>] [<string>]:

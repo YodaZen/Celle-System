@@ -1,0 +1,87 @@
+import:
+    java.util.UUID
+    org.bukkit.Bukkit
+    com.sk89q.worldedit.Vector
+    com.sk89q.worldedit.BlockVector
+    com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion
+    com.sk89q.worldguard.protection.managers.RemovalStrategy
+    com.sk89q.worldguard.protection.flags.DefaultFlag as Flag
+    com.sk89q.worldguard.protection.flags.RegionGroup as Group
+    com.sk89q.worldguard.protection.flags.StateFlag$State
+    com.sk89q.worldguard.domains.DefaultDomain
+    com.sk89q.worldedit.LocalSession
+    com.sk89q.worldedit.bukkit.BukkitAdapter
+
+options:
+    p: &8&l[&b&lCELLE&f&lSYSTEM&8&l] &7>>&f
+
+
+
+function createCuboidRegion(loc1: location, loc2: location, name: string, worldguardInstance: object) :: object:
+
+    set {_v1} to new Vector((x-loc of {_loc1}), (y-loc of {_loc1}), (z-loc of {_loc1})).toBlockVector()
+    set {_v2} to new Vector((x-loc of {_loc2}), (y-loc of {_loc2}), (z-loc of {_loc2})).toBlockVector()
+
+    set {_region} to new ProtectedCuboidRegion({_name}, {_v1}, {_v2})
+    {_worldguardInstance}.addRegion({_region})
+
+    return {_worldguardInstance}.getRegion({_name})
+
+function removeRegion(name: string, worldguardInstance: object, removeChildren: boolean = false):
+    if {_boolean} = true:
+        {_worldguardInstance}.removeRegion({_name}, RemovalStrategy.UNSET_PARENT_IN_CHILDREN)
+    else:
+        {_worldguardInstance}.removeRegion({_name})
+
+function celle_getRegionName(region: object) :: string:
+    return {_region}.getId()
+
+function celle_getRegion(name: string, worldguardInstance: object) :: object:
+    return {_worldguardInstance}.getRegion({_name})
+
+function regionExists(name: string, worldguardInstance: object) :: boolean:
+    return {_worldguardInstance}.hasRegion({_name})
+
+function setFlag(region: object, flag: object, state: object):
+    {_region}.setFlag({_flag}, {_state})
+
+function getFlag(region: object, flag: object) :: object:
+    return {_region}.getFlag({_flag})
+
+function getFlags(region: object) :: object:
+    return {_region}.getFlags()
+
+function setPriority(region: object, Priority: integer = 10):
+    {_region}.setPriority({_Priority})
+
+function addMember(region: object, p: player):
+    set {_uuid} to uuid of {_p}
+    {_region}.getMembers().addPlayer(UUID.fromString("%{_uuid}%"))
+
+function addGroup(region: object, group: string):
+    {_region}.getMembers().addGroup({_group})
+
+function removeMember(region: object, uuid: string):
+    {_region}.getMembers().removePlayer(UUID.fromString("%{_uuid}%"))
+
+function getMembers(region: object) :: strings:
+    loop ...{_region}.getMembers().getUniqueIds():
+        add "%loop-value%" to {_members::*}
+    return {_members::*}
+
+function getWGInstance(world: string = "world") :: object:
+    return Bukkit.getPluginManager().getPlugin("worldguard").getRegionContainer().get(world({_world}))
+
+function getWorldEditSelections(player: player) :: locations:
+    set {_worldEdit} to Bukkit.getServer().getPluginManager().getPlugin("WorldEdit")
+    set {_session} to {_worldEdit}.getSession({_player})
+    set {_selection} to {_session}.getSelection(BukkitAdapter.adapt({_player}.getWorld()))
+    if {_selection} is set:
+        set {_min} to {_selection}.getMinimumPoint()
+        set {_max} to {_selection}.getMaximumPoint()
+        set {_world} to {_selection}.getWorld()
+        set {_Loc::1} to location({_min}.getX(), {_min}.getY(), {_min}.getZ(), {_world})
+        set {_Loc::2} to location({_max}.getX(), {_max}.getY(), {_max}.getZ(), {_world})
+    else:
+        message "{@p} Du mangler at markere cellen! [&c✘&f]" to {_player}
+    return {_Loc::*}

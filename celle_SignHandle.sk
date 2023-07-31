@@ -2,54 +2,55 @@ options:
     p: &8&l[&b&lCELLE&f&lSYSTEM&8&l] &7>>&f
 
 on right click on sign:
-    set {_celle} to {Celle::Locations::%location of player's targeted block%}
-    if {CelleRented::%{_celle}%} is not set:
-        if {Celle::%{_celle}%::Permission} is set:
-            if player has permission "%{Celle::%{_celle}%::Permission}%":
+    set {_celle} to {Celle::Locations::%location of event-block%}
+    if {_celle} is set:
+        if {CelleRented::%{_celle}%} is not set:
+            if {Celle::%{_celle}%::Permission} is set:
+                if player has permission "%{Celle::%{_celle}%::Permission}%":
+                    set {_boolean} to true
+            else:
                 set {_boolean} to true
-        else:
-            set {_boolean} to true
-        if {_boolean} = true:
-            if (size of {Celle::%player's uuid%::Owning::*}) < 1:
-                if player's balance >= {Celle::%{_celle}%::Price}:
-                    message "{@p} Du har købt cellen &b%{_celle}%&f!" to player
-                    subtract {Celle::%{_celle}%::Price} from player's balance
-                    set {_region} to getRegion("%{_celle}%",getWGInstance("%world of {Celle::%{_celle}%::Location}%"))
-                    set {CelleRented::%{_celle}%} to {_celle}
-                    set {Celle::%{_celle}%::ExpirationDate} to 1 day from now
-                    set {Celle::%player's uuid%::Owning::%{_celle}%} to {_celle}
-                    set {Celle::%{_celle}%::Owner} to uuid of player
-                    addMember({_region},player)
-                    wait 1 tick
-                    celle_rentsign("Type.Rented",location of targeted block,{_celle})
+            if {_boolean} = true:
+                if (size of {Celle::%player's uuid%::Owning::*}) < 1:
+                    if player's balance >= {Celle::%{_celle}%::Price}:
+                        message "{@p} Du har købt cellen &b%{_celle}%&f!" to player
+                        subtract {Celle::%{_celle}%::Price} from player's balance
+                        set {_region} to celle_getRegion("%{_celle}%",getWGInstance("%world of {Celle::%{_celle}%::Location}%"))
+                        set {CelleRented::%{_celle}%} to {_celle}
+                        set {Celle::%{_celle}%::ExpirationDate} to 1 day from now
+                        set {Celle::%player's uuid%::Owning::%{_celle}%} to {_celle}
+                        set {Celle::%{_celle}%::Owner} to uuid of player
+                        addMember({_region},player)
+                        wait 1 tick
+                        celle_rentsign("Type.Rented",(location of event-block),{_celle})
+                    else:
+                        message "{@p} Du har ikke råd til dette! &8[&c✘&8]" to player
                 else:
-                    message "{@p} Du har ikke råd til dette! &8[&c✘&8]" to player
+                    message "{@p} Du har ikke tilladelse til at købe flere celler! &8[&c✘&8]" to player
             else:
-                message "{@p} Du har ikke tilladelse til at købe flere celler! &8[&c✘&8]" to player
-        else:
-            message "{@p} Du har ikke tilladelse til at købe denne celle! &8[&c✘&8]" to player
-    else if {CelleRented::%{_celle}%} is set:
-        if {Celle::%{_celle}%::Owner} = uuid of player:
-            if player is sneaking:
-                if (yml value "Celle.Settings.UnrentBySneaking" from "Config") = true:
-                    celle_unrent({_celle}, player)
-                    message "{@p} Du har afmeldt din celle!" to player
-                    stop
-            set {_maxRent} to yml value "Celle.Rentable" from "Config" parsed as timespan
-            remove 1 day from {_maxRent}
-            if difference between now and {Celle::%{_celle}%::ExpirationDate} <= difference between now and ({_maxRent} from now):
-                if player's balance >= {Celle::%{_celle}%::Price}:
-                    subtract {Celle::%{_celle}%::Price} from player's balance
-                    add 1 day to {Celle::%{_celle}%::ExpirationDate}
-                    wait 1 tick
-                    celle_rentsign("Type.Rented",location of targeted block,{_celle})
-                    message "{@p} Du har tilføjet en dag til din celle!" to player
+                message "{@p} Du har ikke tilladelse til at købe denne celle! &8[&c✘&8]" to player
+        else if {CelleRented::%{_celle}%} is set:
+            if {Celle::%{_celle}%::Owner} = uuid of player:
+                if player is sneaking:
+                    if (yml value "Celle.Settings.UnrentBySneaking" from "Config") = true:
+                        celle_unrent({_celle}, player)
+                        message "{@p} Du har afmeldt din celle!" to player
+                        stop
+                set {_maxRent} to yml value "Celle.Rentable" from "Config" parsed as timespan
+                remove 1 day from {_maxRent}
+                if difference between now and {Celle::%{_celle}%::ExpirationDate} <= difference between now and ({_maxRent} from now):
+                    if player's balance >= {Celle::%{_celle}%::Price}:
+                        subtract {Celle::%{_celle}%::Price} from player's balance
+                        add 1 day to {Celle::%{_celle}%::ExpirationDate}
+                        wait 1 tick
+                        celle_rentsign("Type.Rented",(location of event-block),{_celle})
+                        message "{@p} Du har tilføjet en dag til din celle!" to player
+                    else:
+                        message "{@p} Du har ikke råd til dette! &8[&c✘&8]" to player
                 else:
-                    message "{@p} Du har ikke råd til dette! &8[&c✘&8]" to player
+                    message "{@p} Du kan ikke købe flere dage til cellen! &8[&c✘&8]" to player
             else:
-                message "{@p} Du kan ikke købe flere dage til cellen! &8[&c✘&8]" to player
-        else:
-            celle_info({_celle},player)
+                celle_info({_celle},player)
 
 on break of sign:
     if player is op:
